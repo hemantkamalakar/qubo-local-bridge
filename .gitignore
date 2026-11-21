@@ -1,0 +1,15 @@
+# Build output
+/target
+
+# Local state and secrets. Never commit these.
+session.json
+state.json
+device_id
+*.pem
+*.key
+.env
+
+# Editors and systems
+.idea/
+.vscode/
+.DS_Store

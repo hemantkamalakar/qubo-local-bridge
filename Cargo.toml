@@ -1,0 +1,89 @@
+[package]
+name = "qubo-local-bridge"
+version = "0.1.0"
+edition = "2024"
+authors = ["Hemant Kamalakar <hemant.kamalakar@gmail.com>"]
+rust-version = "1.89"
+description = "One command to control QUBO air purifiers and smart sockets, local or cloud: CLI, MCP server and agent skill."
+license = "MIT"
+readme = "README.md"
+keywords = ["qubo", "mqtt", "air-purifier", "smart-home", "mcp"]
+categories = ["command-line-utilities", "hardware-support"]
+include = [
+    "src/**",
+    "tests/**",
+    "skills/**",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "CHANGELOG.md",
+    "Cargo.toml",
+    "Cargo.lock",
+]
+
+[lib]
+name = "qubo_bridge"
+path = "src/lib.rs"
+
+[[bin]]
+name = "qubo"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+axum = "0.8"
+base64 = "0.22"
+clap = { version = "4", features = ["derive"] }
+comfy-table = "7"
+regex = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-webpki-roots"] }
+rmcp = { version = "3.11.0", features = ["server", "transport-io", "transport-streamable-http-server", "macros"] }
+rpassword = "7"
+rumqttc = { version = "0.25", default-features = false, features = ["use-rustls-no-provider"] }
+# Selects the "ring" crypto provider for TLS. Without it, TLS panics at run time.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rumqttd = { version = "0.20", default-features = false, features = ["use-rustls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "net", "signal", "io-util", "process", "fs", "io-std"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "pem", "ring"] }
+rand = "0.8"
+rsa = "0.9"
+rustls-pki-types = "1"
+time = "0.3"
+uuid = { version = "1", features = ["v4"] }
+schemars = "1"
+
+[dev-dependencies]
+flume = "0.11"
+tempfile = "3"
+x509-parser = { version = "0.18", features = ["verify"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "deny"
+
+[lints.rustdoc]
+broken_intra_doc_links = "deny"
+missing_crate_level_docs = "deny"
+
+[lints.clippy]
+all = { level = "deny", priority = 10 }
+redundant_clone = { level = "deny", priority = 9 }
+needless_collect = { level = "deny", priority = 9 }
+pedantic = { level = "warn", priority = 3 }
+nursery = { level = "warn", priority = 2 }
+unwrap_used = "deny"
+expect_used = "deny"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+
+[profile.dev.package."*"]
+opt-level = 2

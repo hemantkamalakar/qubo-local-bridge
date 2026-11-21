@@ -1,0 +1,52 @@
+name: Bug report
+description: Something does not work as the documentation says.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Warning: remove tokens, phone numbers, MAC addresses and device IDs from everything that you paste here.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `qubo --version`.
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [Windows, Linux x64, Linux arm64, Other]
+    validations:
+      required: true
+  - type: dropdown
+    id: path
+    attributes:
+      label: Control path
+      options: [Cloud, Local, Both]
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device model and firmware
+      description: For example, "Q400, firmware 1.2.3".
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The commands that you ran.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result and actual result
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `qubo doctor --json`
+      render: json

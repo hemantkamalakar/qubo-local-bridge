@@ -1,0 +1,49 @@
+# Checked by cargo-deny in CI. Run it locally with: cargo deny check
+
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+
+# Advisories that we accept. Each entry names the reason.
+# Re-check them when rumqttd, rumqttc, rmcp or rsa publish a new release.
+ignore = [
+    { id = "RUSTSEC-2023-0071", reason = "rsa: Marvin timing attack. We only generate RSA keys with this crate. Ring does the signing." },
+    { id = "RUSTSEC-2025-0134", reason = "rustls-pemfile is unmaintained. Only rumqttc and rumqttd read PEM files with it. No fix exists." },
+    { id = "RUSTSEC-2026-0543", reason = "chrono is unmaintained. Only rmcp and schemars use it. No fix exists." },
+    { id = "RUSTSEC-2026-0346", reason = "rustls 0.22 comes from rumqttd. Only a client session exposes secrets in Debug output. The broker is a server and never logs it." },
+    { id = "RUSTSEC-2026-0349", reason = "rustls 0.22 comes from rumqttd. The downgrade attack is on the client side. The broker is a server." },
+    { id = "RUSTSEC-2026-0049", reason = "rustls-webpki 0.102 comes from rumqttd and rumqttc. Both use it only for an error type. The broker does not check client certificates or CRLs." },
+    { id = "RUSTSEC-2026-0098", reason = "Same as RUSTSEC-2026-0049. The broker does not validate certificate chains." },
+    { id = "RUSTSEC-2026-0099", reason = "Same as RUSTSEC-2026-0049. The broker does not validate certificate chains." },
+    { id = "RUSTSEC-2026-0104", reason = "Same as RUSTSEC-2026-0049. The broker does not parse CRLs." },
+    { id = "RUSTSEC-2026-0382", reason = "Same as RUSTSEC-2026-0049. The broker does not validate certificate chains." },
+]
+
+[licenses]
+version = 2
+confidence-threshold = 0.8
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "CC0-1.0",
+    "CDLA-Permissive-2.0",
+    "ISC",
+    "MIT",
+    "Unicode-3.0",
+    "Unlicense",
+    "Zlib",
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
