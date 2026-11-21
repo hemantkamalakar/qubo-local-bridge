@@ -15,3 +15,4 @@ All notable changes to this project are in this file. The format follows [Keep a
 - MCP server (`qubo mcp`) over `stdio` and streamable HTTP.
 - Agent skill in `skills/qubo-home`.
 - Safety check: a socket does not switch off above 15 W unless `--force` is set.
+- Release archive for macOS on Apple Silicon (`macos-arm64`).

@@ -34,6 +34,7 @@ Download the archive for your system from the Releases page. The archives are:
 - `windows-x64`
 - `linux-x64`
 - `linux-arm64` (Raspberry Pi)
+- `macos-arm64` (Apple Silicon)
 
 Each archive has a SHA-256 checksum file. Unpack the archive and put `qubo` in your `PATH`.
 
