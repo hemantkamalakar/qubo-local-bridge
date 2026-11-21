@@ -1894,7 +1894,7 @@ dependencies = [
  "clap",
  "comfy-table",
  "flume",
- "rand 0.8.8",
+ "rand 0.10.4",
  "rcgen",
  "regex",
  "reqwest",
