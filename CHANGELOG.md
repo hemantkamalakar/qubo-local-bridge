@@ -4,6 +4,13 @@ All notable changes to this project are in this file. The format follows [Keep a
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-22
+
+### Changed
+
+- Update dependencies: `rsa` 0.10, `rand` 0.10, `base64` 0.23 and `comfy-table` 8.
+- Update the GitHub Actions in the CI and release workflows.
+
 ## [0.1.0] - 2026-11-21
 
 ### Added
