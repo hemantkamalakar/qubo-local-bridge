@@ -5,7 +5,14 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # Must match the flume version inside rumqttc. Upgrade when rumqttc does.
+      - dependency-name: flume
+        update-types: ["version-update:semver-minor"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # The 1.89 ref is the minimum supported Rust version, not a version to track.
+      - dependency-name: dtolnay/rust-toolchain
