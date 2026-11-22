@@ -34,7 +34,7 @@ anyhow = "1"
 axum = "0.8"
 base64 = "0.23"
 clap = { version = "4", features = ["derive"] }
-comfy-table = "7"
+comfy-table = "8"
 regex = "1"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-webpki-roots"] }
 rmcp = { version = "3.11.0", features = ["server", "transport-io", "transport-streamable-http-server", "macros"] }
