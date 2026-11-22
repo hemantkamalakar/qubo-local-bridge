@@ -36,7 +36,7 @@ fn cert_error(err: impl std::fmt::Display) -> Error {
 
 fn rsa_key() -> Result<KeyPair> {
     // The `rsa` crate only generates the key. The signing is done by `ring`.
-    let key = rsa::RsaPrivateKey::new(&mut rand::rngs::OsRng, 2048).map_err(cert_error)?;
+    let key = rsa::PrivateKey::new(&mut rand::rngs::SysRng, 2048).map_err(cert_error)?;
     let der = key.to_pkcs8_der().map_err(cert_error)?;
     let der = PrivatePkcs8KeyDer::from(der.as_bytes().to_vec());
     KeyPair::from_pkcs8_der_and_sign_algo(&der, &PKCS_RSA_SHA256).map_err(cert_error)
