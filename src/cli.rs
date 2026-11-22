@@ -253,7 +253,7 @@ fn emit(data: &Value, as_json: bool) {
         columns.push("result");
     }
     let mut table = Table::new();
-    table.load_preset(UTF8_FULL_CONDENSED);
+    table.load_style(UTF8_FULL_CONDENSED);
     table.set_header(columns.iter().copied());
     for row in rows {
         table.add_row(columns.iter().map(|column| match row.get(*column) {
