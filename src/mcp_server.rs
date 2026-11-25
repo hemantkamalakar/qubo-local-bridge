@@ -139,14 +139,26 @@ impl QuboServer {
     }
 
     #[tool(
-        description = "Return the latest state of every purifier and socket. A null value is not reported yet. Fields in \"cached\" come from an earlier session."
+        description = "Return the latest state of every purifier and socket. A null value is not reported yet. Fields in \"cached\" come from an earlier session.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn get_home_telemetry(&self) -> std::result::Result<CallToolResult, ErrorData> {
         Ok(reply(self.client().await.map(|client| rows(client))))
     }
 
     #[tool(
-        description = "Ask all devices for fresh PM2.5, filter-life and energy readings. Return telemetry."
+        description = "Ask all devices for fresh PM2.5, filter-life and energy readings. Return telemetry.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn refresh_sensors(
         &self,
@@ -163,7 +175,13 @@ impl QuboServer {
     }
 
     #[tool(
-        description = "Change an air purifier. speed: 1 (low) to 3 (high). confirmed is false when the device did not report the change in 5 s."
+        description = "Change an air purifier. speed: 1 (low) to 3 (high). confirmed is false when the device did not report the change in 5 s.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = false,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn control_purifier(
         &self,
@@ -173,7 +191,13 @@ impl QuboServer {
     }
 
     #[tool(
-        description = "Switch a smart socket on or off. Switch-off is refused when the load draws more than 15 W or gives no fresh reading. Set force to true only after the user confirms."
+        description = "Switch a smart socket on or off. Switch-off is refused when the load draws more than 15 W or gives no fresh reading. Set force to true only after the user confirms.",
+        annotations(
+            read_only_hint = false,
+            destructive_hint = true,
+            idempotent_hint = true,
+            open_world_hint = false
+        )
     )]
     async fn control_socket(
         &self,
@@ -325,6 +349,65 @@ mod tests {
         async fn refuses_a_speed_above_3() {
             let result = server_with(purifier_client()).purifier(purifier_speed(Some(4))).await;
             assert!(matches!(result, Err(Error::Value(_))));
+        }
+    }
+
+    mod get_home_telemetry {
+        use super::*;
+
+        #[tokio::test]
+        async fn succeeds_with_one_row_for_each_device() {
+            let (client, _) = offline(vec![socket()], None, vec![]);
+            let result = server_with(client).get_home_telemetry().await.unwrap();
+            assert_eq!(result.is_error, Some(false));
+        }
+    }
+
+    mod refresh_sensors {
+        use super::*;
+
+        #[tokio::test]
+        async fn succeeds_when_no_device_replies() {
+            let (client, _) = offline(vec![socket()], None, vec![]);
+            let params = Parameters(RefreshParams { timeout: Some(0.0) });
+            let result = server_with(client).refresh_sensors(params).await.unwrap();
+            assert_eq!(result.is_error, Some(false));
+        }
+    }
+
+    mod annotations {
+        use super::*;
+
+        #[test]
+        fn declares_all_four_hints_on_every_tool() {
+            let tools = QuboServer::tool_router().list_all();
+            let hints: Vec<_> = tools
+                .iter()
+                .map(|tool| {
+                    let a = tool.annotations.as_ref().unwrap();
+                    (
+                        tool.name.as_ref(),
+                        [
+                            a.read_only_hint,
+                            a.destructive_hint,
+                            a.idempotent_hint,
+                            a.open_world_hint,
+                        ],
+                    )
+                })
+                .collect();
+            let row = |name, ro, destructive| {
+                (name, [Some(ro), Some(destructive), Some(true), Some(false)])
+            };
+            assert_eq!(
+                hints,
+                [
+                    row("control_purifier", false, false),
+                    row("control_socket", false, true),
+                    row("get_home_telemetry", true, false),
+                    row("refresh_sensors", true, false),
+                ]
+            );
         }
     }
 
