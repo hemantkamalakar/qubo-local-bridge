@@ -1,5 +1,7 @@
 # qubo-local-bridge
 
+[![M8ven Score](https://m8ven.ai/badge/mcp/hemantkamalakar-qubo-local-bridge-4vyqk4?v=ce732e247d7b7b77510a96ca9f5aaa88)](https://m8ven.ai/mcp/hemantkamalakar-qubo-local-bridge-4vyqk4?s=readme)
+
 One command, `qubo`, controls QUBO smart air purifiers and smart sockets. It works through the QUBO cloud, or only on your home network. It also has an MCP server for AI assistants.
 
 `qubo` is one static Rust binary. It has no runtime and no external broker.
