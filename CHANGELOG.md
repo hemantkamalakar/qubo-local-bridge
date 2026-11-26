@@ -4,6 +4,10 @@ All notable changes to this project are in this file. The format follows [Keep a
 
 ## [Unreleased]
 
+### Added
+
+- `qubo mcp` serves the `qubo-home` skill through the MCP Skills extension and as the resource `skill://qubo-home/SKILL.md`.
+
 ## [0.1.1] - 2026-11-22
 
 ### Changed

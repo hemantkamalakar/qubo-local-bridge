@@ -5,7 +5,13 @@ use std::time::Duration;
 
 use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
-use rmcp::model::{CallToolResult, ContentBlock, Implementation, ServerCapabilities, ServerConfig};
+use rmcp::model::{
+    CallToolResult, ContentBlock, GetSkillRequestParams, GetSkillResult, Implementation,
+    ListResourcesResult, ListSkillsResult, PaginatedRequestParams, ReadResourceRequestParams,
+    ReadResourceResponse, ReadResourceResult, Resource, ResourceContents, ServerCapabilities,
+    ServerConfig, Skill, SkillFrontmatter, SkillResource, SkillResources,
+};
+use rmcp::service::{RequestContext, RoleServer};
 use rmcp::transport::streamable_http_server::session::local::LocalSessionManager;
 use rmcp::transport::streamable_http_server::{StreamableHttpServerConfig, StreamableHttpService};
 use rmcp::{ErrorData, ServerHandler, ServiceExt, schemars, tool, tool_handler, tool_router};
@@ -28,6 +34,40 @@ fn wait_from(seconds: Option<f64>) -> Duration {
     seconds
         .and_then(|s| Duration::try_from_secs_f64(s).ok())
         .map_or(REPLY_TIMEOUT, |wait| wait.min(MAX_WAIT))
+}
+
+const SKILL_URI: &str = "skill://qubo-home/SKILL.md";
+/// Embedded, because an installed binary has no `skills` folder.
+const SKILL_MD: &str = include_str!("../skills/qubo-home/SKILL.md");
+const SKILL_NAME: &str = "qubo-home";
+/// Must match the frontmatter of `SKILL.md`. A test checks this.
+const SKILL_DESCRIPTION: &str = "Controls QUBO air purifiers (HPH) and smart sockets (HSP) through the qubo MCP tools or the qubo CLI, on the local network or the QUBO cloud. Use it when the user asks about air quality, PM2.5, the purifier fan, filter life, or socket power and energy.";
+const SKILL_MIME: &str = "text/markdown";
+
+fn skill() -> Skill {
+    let file = SkillResource::from_bytes(SKILL_URI, SKILL_MD.as_bytes());
+    Skill::new(
+        SKILL_URI,
+        SkillFrontmatter::new(SKILL_NAME, SKILL_DESCRIPTION),
+        SkillResources::Files(vec![file]),
+    )
+}
+
+fn find_skill(uri: &str) -> std::result::Result<GetSkillResult, ErrorData> {
+    if uri == SKILL_URI {
+        Ok(GetSkillResult::new(skill()))
+    } else {
+        Err(ErrorData::invalid_params(format!("unknown skill {uri}"), None))
+    }
+}
+
+fn read_skill_file(uri: &str) -> std::result::Result<ReadResourceResult, ErrorData> {
+    if uri == SKILL_URI {
+        let contents = ResourceContents::text(SKILL_MD, uri).with_mime_type(SKILL_MIME);
+        Ok(ReadResourceResult::new(vec![contents]))
+    } else {
+        Err(ErrorData::resource_not_found(format!("unknown resource {uri}"), None))
+    }
 }
 
 /// The MCP server. It keeps one long-lived broker connection.
@@ -212,12 +252,51 @@ impl QuboServer {
 #[tool_handler(router = self.tool_router)]
 impl ServerHandler for QuboServer {
     fn get_info(&self) -> ServerConfig {
-        ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
+        let capabilities =
+            ServerCapabilities::builder().enable_tools().enable_resources().enable_skills().build();
+        ServerConfig::new(capabilities)
             .with_server_info(Implementation::new("qubo", env!("CARGO_PKG_VERSION")))
             .with_instructions(
             "Control of QUBO air purifiers and smart sockets, on the local network or the cloud. \
-             Call get_home_telemetry before you change a device.",
+             Read the skill skill://qubo-home/SKILL.md and call get_home_telemetry \
+             before you change a device.",
         )
+    }
+
+    async fn list_skills(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> std::result::Result<ListSkillsResult, ErrorData> {
+        Ok(ListSkillsResult::with_all_items(vec![skill()]))
+    }
+
+    async fn get_skill(
+        &self,
+        request: GetSkillRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> std::result::Result<GetSkillResult, ErrorData> {
+        find_skill(&request.uri)
+    }
+
+    async fn list_resources(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> std::result::Result<ListResourcesResult, ErrorData> {
+        let resource = Resource::new(SKILL_URI, SKILL_NAME)
+            .with_description(SKILL_DESCRIPTION)
+            .with_mime_type(SKILL_MIME)
+            .with_size(SKILL_MD.len() as u64);
+        Ok(ListResourcesResult::with_all_items(vec![resource]))
+    }
+
+    async fn read_resource(
+        &self,
+        request: ReadResourceRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> std::result::Result<ReadResourceResponse, ErrorData> {
+        read_skill_file(&request.uri).map(Into::into)
     }
 }
 
@@ -421,8 +500,68 @@ mod tests {
         }
     }
 
+    mod skill {
+        use super::*;
+
+        fn frontmatter_line(line: &str) -> bool {
+            SKILL_MD.lines().skip(1).take_while(|l| *l != "---").any(|l| l == line)
+        }
+
+        #[test]
+        fn passes_the_spec_validation() {
+            assert!(skill().validate().is_ok());
+        }
+
+        #[test]
+        fn has_the_name_of_the_file() {
+            assert!(frontmatter_line(&format!("name: {SKILL_NAME}")));
+        }
+
+        #[test]
+        fn has_the_description_of_the_file() {
+            assert!(frontmatter_line(&format!("description: {SKILL_DESCRIPTION}")));
+        }
+
+        #[test]
+        fn lists_every_frontmatter_field() {
+            let fields = SKILL_MD.lines().skip(1).take_while(|l| *l != "---").count();
+            assert_eq!(fields, 2);
+        }
+
+        #[test]
+        fn has_lf_line_endings_only() {
+            assert!(!SKILL_MD.contains('\r'));
+        }
+    }
+
+    mod find_skill {
+        use super::*;
+
+        #[test]
+        fn rejects_an_unknown_uri() {
+            let result = find_skill("skill://other/SKILL.md");
+            assert!(result.is_err());
+        }
+    }
+
+    mod read_skill_file {
+        use super::*;
+
+        #[test]
+        fn rejects_an_unknown_uri() {
+            let result = read_skill_file("skill://qubo-home/../session.json");
+            assert!(result.is_err());
+        }
+    }
+
     mod get_info {
         use super::*;
+
+        #[test]
+        fn declares_the_skills_extension() {
+            let server = QuboServer::new(Paths::new("/unused/config.json"));
+            assert!(server.get_info().capabilities.supports_skills());
+        }
 
         #[test]
         fn names_the_server_qubo() {
