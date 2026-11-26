@@ -5,6 +5,7 @@ use std::net::{IpAddr, Ipv4Addr, TcpListener};
 use std::time::Duration;
 
 use qubo_bridge::broker::BrokerConfig;
+use qubo_bridge::certs;
 use qubo_bridge::models::{Config, Paths};
 use qubo_bridge::serve::{port_open, serve};
 use rumqttc::{AsyncClient, Event, MqttOptions, Packet, QoS, TlsConfiguration, Transport};
@@ -112,6 +113,9 @@ impl LocalPath {
     async fn start() -> Self {
         let dir = tempfile::tempdir().unwrap();
         let paths = Paths::new(dir.path().join("config.json"));
+        // RSA keys take seconds. Make them first, so that another test cannot take a free port
+        // before the broker binds it. This also makes sure that `ca.crt` exists.
+        certs::ensure(&paths.broker_dir()).unwrap();
         let (local_port, device_port) = (free_port(), free_port());
         Config { port: local_port, ..Config::default() }.save(&paths).unwrap();
 
@@ -133,6 +137,7 @@ impl LocalPath {
             }
             tokio::time::sleep(Duration::from_millis(200)).await;
         }
+        assert!(!server.is_finished(), "qubo serve stopped during the start: {:?}", server.await);
         let ca = std::fs::read(paths.broker_dir().join("ca.crt")).unwrap();
         let purifier = tokio::spawn(run_fake_purifier(device_port, ca));
         wait_for_saved_device(&paths).await;
