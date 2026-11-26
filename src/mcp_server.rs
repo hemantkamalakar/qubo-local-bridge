@@ -528,6 +528,37 @@ mod tests {
             assert_eq!(fields, 2);
         }
 
+        // The manifest lists SKILL.md only. The spec requires a complete list.
+        #[test]
+        fn has_no_other_file_in_its_folder() {
+            let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/skills/qubo-home");
+            let names: Vec<String> = std::fs::read_dir(folder)
+                .unwrap()
+                .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+                .filter(|name| !name.starts_with('.'))
+                .collect();
+            assert_eq!(names, ["SKILL.md"]);
+        }
+
+        /// A stricter rule than YAML, so that no YAML parser is necessary.
+        fn is_safe_unquoted(value: &str) -> bool {
+            value.starts_with(|c: char| c.is_ascii_alphanumeric())
+                && !value.contains(": ")
+                && !value.contains(" #")
+                && !value.ends_with(':')
+        }
+
+        #[test]
+        fn has_only_frontmatter_values_that_are_safe_in_yaml() {
+            let unsafe_lines: Vec<&str> = SKILL_MD
+                .lines()
+                .skip(1)
+                .take_while(|line| *line != "---")
+                .filter(|line| !line.split_once(": ").is_some_and(|(_, v)| is_safe_unquoted(v)))
+                .collect();
+            assert_eq!(unsafe_lines, Vec::<&str>::new());
+        }
+
         #[test]
         fn has_lf_line_endings_only() {
             assert!(!SKILL_MD.contains('\r'));
