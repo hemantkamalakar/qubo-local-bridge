@@ -119,6 +119,8 @@ Warning: the HTTP transport has no login. Bind it to a loopback or trusted addre
 
 The folder `skills/qubo-home` has an agent skill. It tells an assistant how to read the state and which safety rules to follow.
 
+`qubo mcp` also serves this skill as `skill://qubo-home/SKILL.md`, through the [MCP Skills extension](https://modelcontextprotocol.io/extensions/skills/overview) and as an MCP resource. Few clients support the extension. If your client does not load the skill, copy `skills/qubo-home` to its skills folder. For Claude Code, the folder is `~/.claude/skills/`.
+
 ## Files and settings
 
 | Item | Use |
