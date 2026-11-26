@@ -258,8 +258,8 @@ impl ServerHandler for QuboServer {
             .with_server_info(Implementation::new("qubo", env!("CARGO_PKG_VERSION")))
             .with_instructions(
             "Control of QUBO air purifiers and smart sockets, on the local network or the cloud. \
-             Read the skill skill://qubo-home/SKILL.md and call get_home_telemetry \
-             before you change a device.",
+             If you have the qubo-home skill, load it. If you do not, read \
+             skill://qubo-home/SKILL.md. Call get_home_telemetry before you change a device.",
         )
     }
 
